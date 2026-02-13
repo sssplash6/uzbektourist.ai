@@ -11,7 +11,18 @@ type FeedbackBody = {
   sources?: Array<{ id: string; title: string; url: string }>;
 };
 
-const memoryStore: FeedbackBody[] = [];
+type FeedbackRecord = {
+  id: string;
+  messageId: string | null;
+  rating: 1 | -1;
+  mode: string | null;
+  question: string | null;
+  answer: string | null;
+  sources: Array<{ id: string; title: string; url: string }>;
+  userAgent: string | null;
+};
+
+const memoryStore: FeedbackRecord[] = [];
 
 export async function POST(req: Request) {
   const body = (await req.json()) as FeedbackBody;
