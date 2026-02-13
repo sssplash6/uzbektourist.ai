@@ -273,6 +273,26 @@ export default function Home() {
     );
   }
 
+  function parseItineraryFromText(text: string): Itinerary | null {
+    const trimmed = text.trim();
+    if (!trimmed.startsWith("{")) return null;
+    try {
+      const parsed = JSON.parse(trimmed) as Itinerary;
+      if (!parsed || !Array.isArray(parsed.days)) return null;
+      return parsed;
+    } catch {
+      const match = trimmed.match(/\{[\s\S]*\}/);
+      if (!match) return null;
+      try {
+        const parsed = JSON.parse(match[0]) as Itinerary;
+        if (!parsed || !Array.isArray(parsed.days)) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+  }
+
   function getPreviousUserQuestion(startIndex: number, list: Message[]) {
     for (let i = startIndex - 1; i >= 0; i -= 1) {
       if (list[i].role === "user") {
@@ -393,7 +413,8 @@ export default function Home() {
 
       const data = await res.json();
       setItinerary(data.text);
-      setItineraryStructured(data.itinerary ?? null);
+      const parsedStructured = data.itinerary ?? parseItineraryFromText(data.text);
+      setItineraryStructured(parsedStructured ?? null);
       setItinerarySources(data.sources ?? []);
     } catch (error) {
       setItineraryError(

@@ -129,10 +129,19 @@ function extractJson(text: string) {
   const candidate = fenced ? fenced[1] : trimmed;
   const braceMatch = candidate.match(/\\{[\\s\\S]*\\}/);
   if (!braceMatch) return null;
+  const raw = braceMatch[0];
   try {
-    return JSON.parse(braceMatch[0]);
+    return JSON.parse(raw);
   } catch {
-    return null;
+    const repaired = raw
+      .replace(/[“”]/g, "\"")
+      .replace(/[’]/g, "'")
+      .replace(/,\\s*([}\\]])/g, "$1");
+    try {
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
   }
 }
 
