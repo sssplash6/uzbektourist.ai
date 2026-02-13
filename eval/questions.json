@@ -1,0 +1,32 @@
+[
+  {
+    "id": "chat-transport",
+    "mode": "chat",
+    "input": "What are the main ways to travel between Tashkent and Samarkand?"
+  },
+  {
+    "id": "chat-visa",
+    "mode": "chat",
+    "input": "What should I know about visas and registration in Uzbekistan?"
+  },
+  {
+    "id": "itinerary-samarkand",
+    "mode": "itinerary",
+    "city": "Samarkand",
+    "days": 2,
+    "style": "balanced",
+    "budget": "standard",
+    "interests": "history, architecture",
+    "expectDayStructure": true
+  },
+  {
+    "id": "itinerary-bukhara",
+    "mode": "itinerary",
+    "city": "Bukhara",
+    "days": 3,
+    "style": "relaxed",
+    "budget": "budget",
+    "interests": "local food, markets",
+    "expectDayStructure": true
+  }
+]

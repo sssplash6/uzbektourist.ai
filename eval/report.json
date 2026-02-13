@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "passed": 0,
+    "total": 4,
+    "timestamp": "2026-02-13T21:55:08.816Z"
+  },
+  "results": [
+    {
+      "id": "chat-transport",
+      "mode": "chat",
+      "durationMs": 52,
+      "ok": false,
+      "error": "fetch failed",
+      "checks": {
+        "sources": null,
+        "dayStructure": true,
+        "structured": true,
+        "sourcesReturned": true
+      },
+      "sample": "",
+      "sourcesCount": 0
+    },
+    {
+      "id": "chat-visa",
+      "mode": "chat",
+      "durationMs": 1,
+      "ok": false,
+      "error": "fetch failed",
+      "checks": {
+        "sources": null,
+        "dayStructure": true,
+        "structured": true,
+        "sourcesReturned": true
+      },
+      "sample": "",
+      "sourcesCount": 0
+    },
+    {
+      "id": "itinerary-samarkand",
+      "mode": "itinerary",
+      "durationMs": 1,
+      "ok": false,
+      "error": "fetch failed",
+      "checks": {
+        "sources": null,
+        "dayStructure": null,
+        "structured": false,
+        "sourcesReturned": true
+      },
+      "sample": "",
+      "sourcesCount": 0
+    },
+    {
+      "id": "itinerary-bukhara",
+      "mode": "itinerary",
+      "durationMs": 1,
+      "ok": false,
+      "error": "fetch failed",
+      "checks": {
+        "sources": null,
+        "dayStructure": null,
+        "structured": false,
+        "sourcesReturned": true
+      },
+      "sample": "",
+      "sourcesCount": 0
+    }
+  ]
+}
