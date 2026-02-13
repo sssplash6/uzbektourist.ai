@@ -1,72 +1,119 @@
-# uzbektourist.ai
+# uzbektourist.ai — AI Travel Assistant for Uzbekistan
 
-Minimal, low-cost tourist assistant for Uzbekistan (English only). Built for Vercel deployment.
+[![Vercel](https://img.shields.io/badge/deployed-vercel-black)](https://vercel.com)
+![Next.js](https://img.shields.io/badge/next.js-14-black)
+![TypeScript](https://img.shields.io/badge/typescript-5-blue)
+![RAG](https://img.shields.io/badge/RAG-enabled-0f766e)
+![Status](https://img.shields.io/badge/status-live-success)
 
-## Setup
+A minimal, **citation‑grounded** travel assistant for Uzbekistan with **Q&A** and **structured itineraries**. Built for MBZUAI admissions to demonstrate applied AI/ML system design: RAG, structured outputs, evaluation, and a KB ingestion pipeline.
 
-1. Install dependencies
+**Live:** hosted on Vercel (production deployment)
 
-```bash
-npm install
-```
+---
 
-2. Create `.env.local`
+## Why This Project
+Tourists need accurate, localized guidance on transport, visas, and city planning. Generic chatbots are fast but often unreliable. This project prioritizes **grounding and transparency**:
 
-```bash
-cp .env.example .env.local
-```
+- Retrieval‑augmented generation (RAG) over curated sources
+- Citations for every grounded answer
+- Structured JSON itinerary output for clean UI rendering
+- Evaluation harness to track quality and regressions
 
-Fill in `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` for any OpenAI-compatible provider.
-For OpenRouter, use:
+---
 
-- `AI_BASE_URL=https://openrouter.ai/api/v1`
-- `AI_MODEL=openai/gpt-oss-120b:free`
-- Optional: `AI_HTTP_REFERER=https://uzbektourist.uz` and `AI_APP_TITLE=uzbektourist.ai`
+## Key Features
 
-3. Run locally
+- **Q&A Mode**: concise answers about transport, safety, lodging, food, and routes
+- **Itinerary Mode**: structured JSON → clean UI (morning / afternoon / evening)
+- **RAG + Citations**: all responses grounded in `data/sources.json`
+- **KB Ingestion**: convert markdown KB into retrievable sources
+- **Evaluation**: automated checks + report output
+- **Feedback Loop**: optional Postgres persistence for user feedback
 
-```bash
-npm run dev
-```
+---
 
-## Deploy to Vercel
+## System Design (High‑Level)
 
-- Add the same environment variables in your Vercel project settings.
-- Deploy normally; no extra configuration required.
+1. User query →
+2. Retriever selects relevant KB chunks →
+3. Model answers with citations →
+4. UI renders sources + structured itineraries →
+5. Eval + feedback improve quality
 
-## Notes
+---
 
-- The app uses tight token limits to keep costs minimal.
-- The assistant avoids exact prices/schedules and recommends verifying with official sources.
-- Add trusted sources to `data/sources.json` to enable citations and RAG.
-- Feedback is stored in Postgres if `POSTGRES_URL` is set. Without it, feedback falls back to in-memory storage.
+## Tech Stack
+
+- **Next.js 14** (App Router)
+- **OpenRouter** (OpenAI‑compatible API)
+- **RAG** via lightweight TF‑IDF retrieval
+- **Structured JSON outputs** for itinerary mode
+- **Postgres (optional)** for feedback storage
+
+---
 
 ## Knowledge Base Ingestion
-
-If you maintain markdown files in a KB folder, ingest them into `data/sources.json`:
+If you maintain a KB as Markdown files, ingest them into `data/sources.json`:
 
 ```bash
 KB_PATH="/absolute/path/to/backend/kb" npm run ingest:kb
 ```
 
-If no `KB_PATH` is provided, it defaults to `backend/kb` relative to the repo.
+This turns `.md` guides into grounded RAG sources without manual copy/paste.
 
-## Structured Itineraries
-
-Itinerary mode expects JSON from the model and renders a structured UI (days, morning/afternoon/evening, transport notes, tips, sources). If JSON parsing fails, it falls back to markdown.
-
-## RAG (Retrieval)
-
-The API will automatically pull relevant snippets from `data/sources.json` and cite them as `[S1]`, `[S2]`, etc. If no sources are available, it will end with `Sources: none`.
-
-See `data/README.md` for the file format.
+---
 
 ## Evaluation
-
-Create or edit `eval/questions.json`, then run:
+Run automated checks and generate a report:
 
 ```bash
-EVAL_API_URL="http://localhost:3000/api/chat" node scripts/eval.js
+npm run eval
 ```
 
-The script checks that responses include a `Sources:` line and reports basic pass/fail stats.
+Outputs: `eval/report.json`
+
+---
+
+## Deployment (Vercel)
+
+- Import the GitHub repo in Vercel
+- Add env vars:
+  - `AI_BASE_URL`
+  - `AI_API_KEY`
+  - `AI_MODEL`
+  - Optional: `AI_HTTP_REFERER`, `AI_APP_TITLE`, `POSTGRES_URL`
+- Deploy
+
+---
+
+## Responsible AI
+
+- No hallucinated prices or schedules
+- Explicit uncertainty if sources are missing
+- Citations for every grounded answer
+- Evaluation to monitor regressions
+
+---
+
+## Project Structure
+
+```
+app/
+  api/
+    chat/route.ts       # LLM API route
+    feedback/route.ts   # feedback endpoint
+  page.tsx              # UI
+  globals.css           # styling
+lib/
+  rag.ts                # retrieval logic
+data/
+  sources.json          # curated sources
+scripts/
+  ingest_kb.js          # KB → sources
+  eval.js               # evaluation
+```
+
+---
+
+Built for travelers in Uzbekistan with ❤ by [sant1x](https://github.com/sssplash6)
