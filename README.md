@@ -8,7 +8,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![AI](https://img.shields.io/badge/AI-RAG%20Powered-0f766e?style=for-the-badge)
 
-**An AI-powered, citation-grounded travel assistant built specifically for Uzbekistan — delivering accurate answers, structured itineraries, and transparent sourcing.**
+**An AI-powered travel assistant built specifically for Uzbekistan — delivering accurate answers, structured itineraries, and transparent sourcing.**
 
 🚀 **Live Demo:** Deployed on Vercel (production)
 
