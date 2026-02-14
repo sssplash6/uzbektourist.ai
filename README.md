@@ -1,119 +1,220 @@
-# uzbektourist.ai — AI Travel Assistant for Uzbekistan
+# 🌍 uzbektourist.ai — Your Smart AI Travel Companion for Uzbekistan 🇺🇿
 
-[![Vercel](https://img.shields.io/badge/deployed-vercel-black)](https://vercel.com)
-![Next.js](https://img.shields.io/badge/next.js-14-black)
-![TypeScript](https://img.shields.io/badge/typescript-5-blue)
-![RAG](https://img.shields.io/badge/RAG-enabled-0f766e)
-![Status](https://img.shields.io/badge/status-live-success)
+<div align="center">
 
-A minimal, **citation‑grounded** travel assistant for Uzbekistan with **Q&A** and **structured itineraries**. Built for MBZUAI admissions to demonstrate applied AI/ML system design: RAG, structured outputs, evaluation, and a KB ingestion pipeline.
+![Status](https://img.shields.io/badge/status-live-success?style=for-the-badge&color=22c55e)
+![Vercel](https://img.shields.io/badge/deployed-vercel-black?style=for-the-badge&logo=vercel)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![AI](https://img.shields.io/badge/AI-RAG%20Powered-0f766e?style=for-the-badge)
 
-**Live:** hosted on Vercel (production deployment)
+**An AI-powered, citation-grounded travel assistant built specifically for Uzbekistan — delivering accurate answers, structured itineraries, and transparent sourcing.**
 
----
+🚀 **Live Demo:** Deployed on Vercel (production)
 
-## Why This Project
-Tourists need accurate, localized guidance on transport, visas, and city planning. Generic chatbots are fast but often unreliable. This project prioritizes **grounding and transparency**:
-
-- Retrieval‑augmented generation (RAG) over curated sources
-- Citations for every grounded answer
-- Structured JSON itinerary output for clean UI rendering
-- Evaluation harness to track quality and regressions
+</div>
 
 ---
 
-## Key Features
+## ✨ What is uzbektourist.ai?
 
-- **Q&A Mode**: concise answers about transport, safety, lodging, food, and routes
-- **Itinerary Mode**: structured JSON → clean UI (morning / afternoon / evening)
-- **RAG + Citations**: all responses grounded in `data/sources.json`
-- **KB Ingestion**: convert markdown KB into retrievable sources
-- **Evaluation**: automated checks + report output
-- **Feedback Loop**: optional Postgres persistence for user feedback
+**uzbektourist.ai** is a modern, minimal AI travel assistant designed to solve one of the biggest problems in tourism AI: **hallucination**.
 
----
+Instead of generating generic, unreliable answers, this system is built on **Retrieval-Augmented Generation (RAG)**, ensuring that **every response is grounded in verified sources and fully cited**.
 
-## System Design (High‑Level)
+This project was built as part of an **AI systems engineering showcase for MBZUAI admissions**, demonstrating:
 
-1. User query →
-2. Retriever selects relevant KB chunks →
-3. Model answers with citations →
-4. UI renders sources + structured itineraries →
-5. Eval + feedback improve quality
+- End-to-end RAG pipelines
+- Structured AI outputs
+- Evaluation harnesses
+- Knowledge base ingestion pipelines
 
 ---
 
-## Tech Stack
+## 🧠 Why This Matters
 
-- **Next.js 14** (App Router)
-- **OpenRouter** (OpenAI‑compatible API)
-- **RAG** via lightweight TF‑IDF retrieval
-- **Structured JSON outputs** for itinerary mode
-- **Postgres (optional)** for feedback storage
+Tourists in Uzbekistan struggle to find **accurate, localized, and up-to-date information** about:
+
+- Transport
+- Visas & entry rules
+- City navigation
+- Safety
+- Cultural etiquette
+
+Most AI chatbots respond quickly — but **often incorrectly**.
+
+> 🎯 Our goal: **Accuracy → Transparency → Trust.**
+
+We prioritize **grounding, citations, and structured responses** over raw generation.
 
 ---
 
-## Knowledge Base Ingestion
-If you maintain a KB as Markdown files, ingest them into `data/sources.json`:
+## 🚀 Key Features
+
+### 🔍 Smart Q&A
+Concise, factual answers about:
+- Transportation
+- Safety
+- Accommodation
+- Food
+- Routes
+- Local tips
+
+### 🗺️ Structured Itinerary Generation
+- Clean **JSON → UI rendering**
+- Morning / Afternoon / Evening breakdown
+- Location-based planning
+
+### 📚 RAG + Citations
+- All responses grounded in `data/sources.json`
+- Explicit citations for transparency
+
+### ⚙️ Knowledge Base Ingestion
+- Convert Markdown travel guides into retrievable AI knowledge
+
+### 🧪 Evaluation Harness
+- Automated regression checks
+- JSON evaluation reports
+
+### 💬 Feedback Loop (Optional)
+- Store user feedback in Postgres
+- Improve responses iteratively
+
+---
+
+## 🏗️ System Architecture (High-Level)
+
+```text
+User Query
+     ↓
+Retriever → Selects Relevant KB Chunks
+     ↓
+LLM → Generates Grounded Answer + Citations
+     ↓
+UI → Renders Structured Output + Sources
+     ↓
+Evaluation + Feedback Loop
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Tech |
+|--------|------|
+| Frontend | **Next.js 14 (App Router)** |
+| Language | **TypeScript** |
+| AI API | **OpenRouter (OpenAI-compatible)** |
+| Retrieval | **TF‑IDF based lightweight RAG** |
+| Storage | **Postgres (optional)** |
+| Deployment | **Vercel** |
+
+---
+
+## 📦 Knowledge Base Ingestion
+
+Maintain your knowledge base as clean Markdown files and convert them into retrievable AI sources:
 
 ```bash
 KB_PATH="/absolute/path/to/backend/kb" npm run ingest:kb
 ```
 
-This turns `.md` guides into grounded RAG sources without manual copy/paste.
+This builds `data/sources.json`, enabling:
+
+- Grounded generation
+- Citation linking
+- Fast retrieval
 
 ---
 
-## Evaluation
-Run automated checks and generate a report:
+## 🧪 Evaluation & Testing
+
+Run automated evaluation checks:
 
 ```bash
 npm run eval
 ```
 
-Outputs: `eval/report.json`
-
----
-
-## Deployment (Vercel)
-
-- Import the GitHub repo in Vercel
-- Add env vars:
-  - `AI_BASE_URL`
-  - `AI_API_KEY`
-  - `AI_MODEL`
-  - Optional: `AI_HTTP_REFERER`, `AI_APP_TITLE`, `POSTGRES_URL`
-- Deploy
-
----
-
-## Responsible AI
-
-- No hallucinated prices or schedules
-- Explicit uncertainty if sources are missing
-- Citations for every grounded answer
-- Evaluation to monitor regressions
-
----
-
-## Project Structure
+📄 Outputs:
 
 ```
+eval/report.json
+```
+
+Used to:
+
+- Detect regressions
+- Track answer quality
+- Validate citations
+
+---
+
+## 🚢 Deployment Guide (Vercel)
+
+1. Import GitHub repo into Vercel
+2. Configure environment variables:
+
+```env
+AI_BASE_URL=
+AI_API_KEY=
+AI_MODEL=
+AI_HTTP_REFERER=  # optional
+AI_APP_TITLE=    # optional
+POSTGRES_URL=    # optional
+```
+
+3. Deploy 🚀
+
+---
+
+## 🔐 Responsible AI Principles
+
+- ❌ No hallucinated prices, schedules, or routes
+- ⚠️ Explicit uncertainty when sources are missing
+- 📌 Mandatory citations for grounded answers
+- 📊 Continuous evaluation & regression monitoring
+
+---
+
+## 🗂️ Project Structure
+
+```bash
 app/
   api/
-    chat/route.ts       # LLM API route
-    feedback/route.ts   # feedback endpoint
+    chat/route.ts       # LLM API endpoint
+    feedback/route.ts   # feedback ingestion
   page.tsx              # UI
   globals.css           # styling
+
 lib/
   rag.ts                # retrieval logic
+
 data/
-  sources.json          # curated sources
+  sources.json          # curated knowledge sources
+
 scripts/
-  ingest_kb.js          # KB → sources
-  eval.js               # evaluation
+  ingest_kb.js          # KB → RAG ingestion
+  eval.js               # evaluation harness
 ```
 
 ---
 
-Built for travelers in Uzbekistan with ❤ by [sant1x](https://github.com/sssplash6)
+## 🌟 Built With Passion
+
+Built for travelers in Uzbekistan with ❤️  
+By **[sant1x](https://github.com/sssplash6)**
+
+> _"Fast AI is easy. Reliable AI is hard."_ — this project focuses on **getting it right.**
+
+---
+
+## 🤝 Contributions
+
+PRs, ideas, and improvements are welcome. Feel free to open issues or submit enhancements.
+
+---
+
+## ⭐ If You Like This Project
+
+Consider giving it a **star ⭐** — it helps others discover it and motivates further development!
+
