@@ -23,22 +23,6 @@ type Message = {
 
 type Mode = "chat" | "itinerary";
 
-type ItineraryDay = {
-  day: number;
-  theme?: string;
-  morning: string[];
-  afternoon: string[];
-  evening: string[];
-};
-
-type Itinerary = {
-  title: string;
-  days: ItineraryDay[];
-  transportNotes: string[];
-  tips: Array<{ label: string; details: string[] }>;
-  sources: string[];
-};
-
 const cities = [
   "Tashkent",
   "Samarkand",
@@ -88,7 +72,6 @@ export default function Home() {
   const [budget, setBudget] = useState("standard");
   const [interests, setInterests] = useState("");
   const [itinerary, setItinerary] = useState("");
-  const [itineraryStructured, setItineraryStructured] = useState<Itinerary | null>(null);
   const [itineraryLoading, setItineraryLoading] = useState(false);
   const [itineraryError, setItineraryError] = useState<string | null>(null);
   const [itinerarySources, setItinerarySources] = useState<Source[]>([]);
@@ -165,132 +148,6 @@ export default function Home() {
     }
 
     return output.join("\n").trim();
-  }
-
-  function renderSources(sourceTokens: string[], sources: Source[]) {
-    if (!sourceTokens || sourceTokens.length === 0 || sourceTokens.includes("none")) {
-      return <span>Sources: none</span>;
-    }
-    const sourceMap = new Map(sources.map((source) => [source.id, source]));
-    return (
-      <span>
-        Sources:{" "}
-        {sourceTokens.map((token, index) => {
-          const source = sourceMap.get(token);
-          if (!source) {
-            return (
-              <span key={token}>
-                {token}
-                {index < sourceTokens.length - 1 ? " " : ""}
-              </span>
-            );
-          }
-          return (
-            <a
-              key={token}
-              href={source.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {token}
-              {index < sourceTokens.length - 1 ? " " : ""}
-            </a>
-          );
-        })}
-      </span>
-    );
-  }
-
-  function renderItineraryStructured(itin: Itinerary) {
-    return (
-      <div className="itinerary">
-        <h3>{itin.title}</h3>
-        {itin.days.map((day) => (
-          <div key={`day-${day.day}`} className="itinerary-day">
-            <h4>
-              Day {day.day}
-              {day.theme ? ` — ${day.theme}` : ""}
-            </h4>
-            <div className="itinerary-grid">
-              <div>
-                <h5>Morning</h5>
-                <ul>
-                  {day.morning.map((item, index) => (
-                    <li key={`m-${day.day}-${index}`}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h5>Afternoon</h5>
-                <ul>
-                  {day.afternoon.map((item, index) => (
-                    <li key={`a-${day.day}-${index}`}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h5>Evening</h5>
-                <ul>
-                  {day.evening.map((item, index) => (
-                    <li key={`e-${day.day}-${index}`}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        ))}
-        {itin.transportNotes.length > 0 && (
-          <div className="itinerary-section">
-            <h4>Transport notes</h4>
-            <ul>
-              {itin.transportNotes.map((note, index) => (
-                <li key={`t-${index}`}>{note}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {itin.tips.length > 0 && (
-          <div className="itinerary-section">
-            <h4>Practical tips</h4>
-            <div className="tips-grid">
-              {itin.tips.map((tip, index) => (
-                <div key={`tip-${index}`} className="tip-card">
-                  <strong>{tip.label}</strong>
-                  <ul>
-                    {tip.details.map((detail, detailIndex) => (
-                      <li key={`tip-${index}-${detailIndex}`}>{detail}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="sources-line">
-          {renderSources(itin.sources, itinerarySources)}
-        </div>
-      </div>
-    );
-  }
-
-  function parseItineraryFromText(text: string): Itinerary | null {
-    const trimmed = text.trim();
-    if (!trimmed.startsWith("{")) return null;
-    try {
-      const parsed = JSON.parse(trimmed) as Itinerary;
-      if (!parsed || !Array.isArray(parsed.days)) return null;
-      return parsed;
-    } catch {
-      const match = trimmed.match(/\{[\s\S]*\}/);
-      if (!match) return null;
-      try {
-        const parsed = JSON.parse(match[0]) as Itinerary;
-        if (!parsed || !Array.isArray(parsed.days)) return null;
-        return parsed;
-      } catch {
-        return null;
-      }
-    }
   }
 
   function getPreviousUserQuestion(startIndex: number, list: Message[]) {
@@ -413,8 +270,6 @@ export default function Home() {
 
       const data = await res.json();
       setItinerary(data.text);
-      const parsedStructured = data.itinerary ?? parseItineraryFromText(data.text);
-      setItineraryStructured(parsedStructured ?? null);
       setItinerarySources(data.sources ?? []);
     } catch (error) {
       setItineraryError(
@@ -651,75 +506,13 @@ export default function Home() {
                 className="button secondary"
                 onClick={() => {
                   setItinerary("");
-                  setItineraryStructured(null);
                 }}
                 type="button"
               >
                 Clear
               </button>
             </div>
-            {itineraryStructured ? (
-              <div className="message assistant" style={{ marginTop: 16 }}>
-                {renderItineraryStructured(itineraryStructured)}
-                <div className="feedback-row">
-                  <span className="helper">Was this helpful?</span>
-                  <div className="feedback-actions">
-                    <button
-                      className="chip"
-                      type="button"
-                      disabled={
-                        feedbackState["itinerary"] === "sending" ||
-                        feedbackState["itinerary"] === "sent"
-                      }
-                      onClick={() =>
-                        void sendFeedback(
-                          {
-                            id: "itinerary",
-                            role: "assistant",
-                            content: itinerary,
-                            sources: itinerarySources
-                          },
-                          -1,
-                          1,
-                          `Itinerary request: city=${city}, days=${days}, pace=${style}, budget=${budget}, interests=${interests || "none"}`
-                        )
-                      }
-                    >
-                      Helpful
-                    </button>
-                    <button
-                      className="chip"
-                      type="button"
-                      disabled={
-                        feedbackState["itinerary"] === "sending" ||
-                        feedbackState["itinerary"] === "sent"
-                      }
-                      onClick={() =>
-                        void sendFeedback(
-                          {
-                            id: "itinerary",
-                            role: "assistant",
-                            content: itinerary,
-                            sources: itinerarySources
-                          },
-                          -1,
-                          -1,
-                          `Itinerary request: city=${city}, days=${days}, pace=${style}, budget=${budget}, interests=${interests || "none"}`
-                        )
-                      }
-                    >
-                      Not helpful
-                    </button>
-                  </div>
-                  {feedbackState["itinerary"] === "sent" && (
-                    <span className="helper">Thanks!</span>
-                  )}
-                  {feedbackState["itinerary"] === "error" && (
-                    <span className="helper">Could not save.</span>
-                  )}
-                </div>
-              </div>
-            ) : itinerary ? (
+            {itinerary ? (
               <div className="message assistant" style={{ marginTop: 16 }}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}

@@ -18,6 +18,12 @@ export type RetrievedChunk = {
   score: number;
 };
 
+type RetrieveOptions = {
+  includeKb?: boolean;
+  includeWeb?: boolean;
+  minScore?: number;
+};
+
 type Chunk = {
   id: string;
   sourceId: string;
@@ -210,7 +216,15 @@ function cosineSimilarity(
   return dot / (queryNorm * chunk.norm);
 }
 
-export function retrieve(query: string, limit = 4): RetrievedChunk[] {
+function isKbChunk(chunk: Chunk) {
+  return chunk.sourceId.startsWith("kb-") || chunk.url.includes("/kb/");
+}
+
+export function retrieve(
+  query: string,
+  limit = 4,
+  options: RetrieveOptions = {}
+): RetrievedChunk[] {
   const index = getIndex();
   if (index.chunks.length === 0) return [];
 
@@ -218,13 +232,22 @@ export function retrieve(query: string, limit = 4): RetrievedChunk[] {
   if (tokens.length === 0) return [];
 
   const { vector, norm } = computeTfidf(tokens, index.idf);
+  const includeKb = options.includeKb ?? true;
+  const includeWeb = options.includeWeb ?? true;
+  const minScore = options.minScore ?? 0.05;
 
   const scored = index.chunks
+    .filter((chunk) => {
+      const kb = isKbChunk(chunk);
+      if (kb && !includeKb) return false;
+      if (!kb && !includeWeb) return false;
+      return true;
+    })
     .map((chunk) => ({
       chunk,
       score: cosineSimilarity(vector, norm, chunk)
     }))
-    .filter((item) => item.score > 0.05)
+    .filter((item) => item.score > minScore)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 

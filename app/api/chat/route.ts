@@ -17,22 +17,6 @@ type ChatBody = {
   interests?: string;
 };
 
-type ItineraryDay = {
-  day: number;
-  theme?: string;
-  morning: string[];
-  afternoon: string[];
-  evening: string[];
-};
-
-type Itinerary = {
-  title: string;
-  days: ItineraryDay[];
-  transportNotes: string[];
-  tips: Array<{ label: string; details: string[] }>;
-  sources: string[];
-};
-
 const MAX_TOKENS = {
   chat: 600,
   itinerary: 1200
@@ -40,9 +24,10 @@ const MAX_TOKENS = {
 
 const MAX_HISTORY = 10;
 const CACHE_TTL_MS = 1000 * 60 * 10;
+const CACHE_VERSION = 2;
 const responseCache = new Map<
   string,
-  { expires: number; text: string; itinerary?: Itinerary; sources?: Array<{ id: string; title: string; url: string }> }
+  { expires: number; text: string; sources?: Array<{ id: string; title: string; url: string }> }
 >();
 
 function baseSystemPrompt() {
@@ -68,20 +53,13 @@ function itineraryPrompt(body: ChatBody) {
     `Create a ${days}-day itinerary for ${city}.`,
     `Pace: ${style}. Budget: ${budget}.`,
     `Interests/constraints: ${interests}.`,
-    "Return ONLY valid JSON (no markdown, no code fences).",
-    "Schema:",
-    "{",
-    '  \"title\": string,',
-    '  \"days\": [',
-    '    { \"day\": number, \"theme\": string, \"morning\": string[], \"afternoon\": string[], \"evening\": string[] }',
-    "  ],",
-    '  \"transportNotes\": string[],',
-    '  \"tips\": [ { \"label\": \"Safety|Payments|Etiquette\", \"details\": string[] } ],',
-    '  \"sources\": [\"S1\",\"S2\"] or [\"none\"]',
-    "}",
-    "Fill every morning/afternoon/evening with 2-4 bullets.",
+    "Do NOT output JSON. If you are about to output JSON, convert it to the markdown table format below.",
+    "Write in clean markdown with a short title.",
+    "Then include a single markdown table with columns: Day | Morning | Afternoon | Evening.",
+    "Each cell should have 2-4 concise bullet points.",
+    "After the table, add a Transport notes section (bullets) and a Practical tips section (table with Tip | Details).",
     "Do not invent exact prices or hours. If needed, give rough ranges and label as estimates.",
-    "Use [S#] tokens in the sources array only."
+    "End with a Sources line like: Sources: [S1] [S2] or Sources: none."
   ].join(" ");
 }
 
@@ -102,7 +80,8 @@ function buildCacheKey(body: ChatBody, sourceIds: string[]) {
     style: body.style,
     budget: body.budget,
     interests: body.interests,
-    sources: sourceIds
+    sources: sourceIds,
+    cacheVersion: CACHE_VERSION
   };
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
@@ -123,11 +102,38 @@ function formatSources(chunks: ReturnType<typeof retrieve>) {
   ].join("\n\n");
 }
 
+function formatInternalNotes(chunks: ReturnType<typeof retrieve>) {
+  if (chunks.length === 0) return "";
+  const blocks = chunks.map((chunk, index) => {
+    return `Note ${index + 1}:\n${chunk.content}`;
+  });
+  return [
+    "Background notes (internal, do not cite):",
+    blocks.join("\n\n")
+  ].join("\n\n");
+}
+
+type ItineraryDay = {
+  day: number;
+  theme?: string;
+  morning: string[];
+  afternoon: string[];
+  evening: string[];
+};
+
+type Itinerary = {
+  title: string;
+  days: ItineraryDay[];
+  transportNotes: string[];
+  tips: Array<{ label: string; details: string[] }>;
+  sources: string[];
+};
+
 function extractJson(text: string) {
   const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate = fenced ? fenced[1] : trimmed;
-  const braceMatch = candidate.match(/\\{[\\s\\S]*\\}/);
+  const braceMatch = candidate.match(/\{[\s\S]*\}/);
   if (!braceMatch) return null;
   const raw = braceMatch[0];
   try {
@@ -136,7 +142,7 @@ function extractJson(text: string) {
     const repaired = raw
       .replace(/[“”]/g, "\"")
       .replace(/[’]/g, "'")
-      .replace(/,\\s*([}\\]])/g, "$1");
+      .replace(/,\s*([}\]])/g, "$1");
     try {
       return JSON.parse(repaired);
     } catch {
@@ -194,6 +200,53 @@ function normalizeItinerary(raw: unknown, fallbackSources: string[]): Itinerary 
   };
 }
 
+function jsonToMarkdown(raw: unknown, fallbackSources: string[]) {
+  const itinerary = normalizeItinerary(raw, fallbackSources);
+  if (!itinerary) return null;
+
+  const header = `### ${itinerary.title}`;
+  const tableHeader = "| Day | Morning | Afternoon | Evening |\n| --- | --- | --- | --- |";
+  const rows = itinerary.days.map((day) => {
+    const dayLabel = `Day ${day.day}${day.theme ? ` — ${day.theme}` : ""}`;
+    const formatCell = (items: string[]) =>
+      items.length === 0 ? "—" : items.map((item) => `• ${item}`).join("<br>");
+    return `| ${dayLabel} | ${formatCell(day.morning)} | ${formatCell(day.afternoon)} | ${formatCell(day.evening)} |`;
+  });
+
+  const sections: string[] = [];
+  if (itinerary.transportNotes.length > 0) {
+    sections.push(
+      [
+        "**Transport notes**",
+        ...itinerary.transportNotes.map((note) => `- ${note}`)
+      ].join("\n")
+    );
+  }
+
+  if (itinerary.tips.length > 0) {
+    const tipHeader = "| Tip | Details |\n| --- | --- |";
+    const tipRows = itinerary.tips.map((tip) => {
+      const detail = tip.details.length > 0
+        ? tip.details.map((item) => `• ${item}`).join("<br>")
+        : "—";
+      return `| ${tip.label} | ${detail} |`;
+    });
+    sections.push(["**Practical tips**", tipHeader, ...tipRows].join("\n"));
+  }
+
+  const sources = itinerary.sources.length > 0
+    ? itinerary.sources
+    : fallbackSources;
+
+  const sourcesLine = sources.includes("none")
+    ? "Sources: none"
+    : `Sources: ${sources.map((source) => `[${source}]`).join(" ")}`;
+
+  return [header, "", tableHeader, ...rows, "", ...sections, "", sourcesLine]
+    .filter((part) => part !== "")
+    .join("\n");
+}
+
 export async function POST(req: Request) {
   const body = (await req.json()) as ChatBody;
 
@@ -232,14 +285,20 @@ export async function POST(req: Request) {
       ? body.messages?.[body.messages.length - 1]?.content ?? ""
       : `${body.city ?? ""} ${body.interests ?? ""} itinerary`;
 
-  const retrieved = retrieve(query, 4);
-  const cacheKey = buildCacheKey(body, retrieved.map((item) => item.id));
+  const webSources = retrieve(query, 4, { includeKb: false });
+  const kbSources = retrieve(query, 3, { includeWeb: false });
+  const sourceTokens = webSources.length > 0
+    ? webSources.map((_, index) => `S${index + 1}`)
+    : ["none"];
+  const cacheKey = buildCacheKey(
+    body,
+    [...webSources, ...kbSources].map((item) => item.id)
+  );
   const cached = responseCache.get(cacheKey);
 
   if (cached && cached.expires > Date.now()) {
     return NextResponse.json({
       text: cached.text,
-      itinerary: cached.itinerary,
       sources: cached.sources
     });
   }
@@ -248,9 +307,13 @@ export async function POST(req: Request) {
     { role: "system", content: baseSystemPrompt() }
   ];
 
-  const sourcesMessage = formatSources(retrieved);
+  const sourcesMessage = formatSources(webSources);
   if (sourcesMessage) {
     messages.push({ role: "system", content: sourcesMessage });
+  }
+  const notesMessage = formatInternalNotes(kbSources);
+  if (notesMessage) {
+    messages.push({ role: "system", content: notesMessage });
   }
 
   if (body.mode === "chat") {
@@ -308,25 +371,25 @@ export async function POST(req: Request) {
     );
   }
 
-  const sourceTokens = retrieved.length > 0
-    ? retrieved.map((_, index) => `S${index + 1}`)
-    : ["none"];
+  let finalText = text;
 
-  let itinerary: Itinerary | null = null;
   if (body.mode === "itinerary") {
-    itinerary = normalizeItinerary(extractJson(text), sourceTokens);
+    const parsed = extractJson(finalText);
+    const converted = parsed ? jsonToMarkdown(parsed, sourceTokens) : null;
+    if (converted) {
+      finalText = converted;
+    }
   }
 
-  let finalText = text;
-  if (!itinerary && !/\bSources:\s*/i.test(finalText)) {
+  if (!/\bSources:\s*/i.test(finalText)) {
     const fallbackSources =
-      retrieved.length > 0
-        ? retrieved.map((_, index) => `[S${index + 1}]`).join(" ")
+      webSources.length > 0
+        ? webSources.map((_, index) => `[S${index + 1}]`).join(" ")
         : "none";
     finalText = `${finalText}\n\nSources: ${fallbackSources}`;
   }
 
-  const sources = retrieved.map((item, index) => ({
+  const sources = webSources.map((item, index) => ({
     id: `S${index + 1}`,
     title: item.title,
     url: item.url
@@ -335,9 +398,8 @@ export async function POST(req: Request) {
   responseCache.set(cacheKey, {
     text: finalText,
     expires: Date.now() + CACHE_TTL_MS,
-    itinerary: itinerary ?? undefined,
     sources
   });
 
-  return NextResponse.json({ text: finalText, sources, itinerary });
+  return NextResponse.json({ text: finalText, sources });
 }
