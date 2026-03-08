@@ -204,8 +204,6 @@ scripts/
 Built for travelers in Uzbekistan with ❤️  
 By **[sant1x](https://github.com/sssplash6)**
 
-> _"Fast AI is easy. Reliable AI is hard."_ — this project focuses on **getting it right.**
-
 ---
 
 ## 🤝 Contributions
